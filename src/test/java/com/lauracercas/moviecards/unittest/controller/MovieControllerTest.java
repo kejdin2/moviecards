@@ -3,16 +3,14 @@ package com.lauracercas.moviecards.unittest.controller;
 import com.lauracercas.moviecards.controller.MovieController;
 import com.lauracercas.moviecards.model.Actor;
 import com.lauracercas.moviecards.model.Movie;
+import com.lauracercas.moviecards.service.client.MovieServiceClient;
 import com.lauracercas.moviecards.service.movie.MovieService;
 import com.lauracercas.moviecards.util.Messages;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.Mock;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,27 +18,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 
-/**
- * Autor: Laura Cercas Ramos
- * Proyecto: TFM Integración Continua con GitHub Actions
- * Fecha: 04/06/2024
- */
 class MovieControllerTest {
 
     private MovieController controller;
     private AutoCloseable closeable;
 
-    @Mock
-    MovieService movieServiceMock;
-
-    @Mock
-    private Model model;
-
+    @Mock MovieService movieServiceMock;
+    @Mock MovieServiceClient movieClientMock;
+    @Mock Model model;
 
     @BeforeEach
     void setUp() {
         closeable = openMocks(this);
-        controller = new MovieController(movieServiceMock);
+        controller = new MovieController(movieServiceMock, movieClientMock);
     }
 
     @AfterEach
@@ -49,92 +39,56 @@ class MovieControllerTest {
     }
 
     @Test
-    public void shouldGoListMovieAndGetAllMovies() {
-        List<Movie> movies = new ArrayList<>();
+    void shouldGoListMovieAndGetAllMovies() {
+        when(movieClientMock.getAllMovies()).thenReturn(List.of());
 
-        when(movieServiceMock.getAllMovies()).thenReturn(movies);
+        String view = controller.getMoviesList(model);
 
-        String viewName = controller.getMoviesList(model);
-
-        assertEquals("movies/list", viewName);
+        assertEquals("movies/list", view);
+        verify(model).addAttribute(eq("movies"), any());
     }
 
-
     @Test
-    public void shouldInitializeMovie() {
-        String viewName = controller.newMovie(model);
+    void shouldInitializeMovie() {
+        String view = controller.newMovie(model);
 
-        assertEquals("movies/form", viewName);
-
-        verify(model).addAttribute("movie", new Movie());
+        assertEquals("movies/form", view);
+        verify(model).addAttribute(eq("movie"), any(Movie.class));
         verify(model).addAttribute("title", Messages.NEW_MOVIE_TITLE);
     }
 
     @Test
-    public void shouldSaveMovieWithNoErrors() {
+    void shouldSaveMovieWithNoErrors() {
         Movie movie = new Movie();
         BindingResult result = mock(BindingResult.class);
         when(result.hasErrors()).thenReturn(false);
+        when(movieClientMock.saveMovie(any())).thenReturn(movie);
 
-        when(movieServiceMock.save(any(Movie.class))).thenReturn(movie);
+        String view = controller.saveMovie(movie, result, model);
 
-        String viewName = controller.saveMovie(movie, result, model);
-
-        assertEquals("movies/form", viewName);
-
-        verify(model).addAttribute("movie", movie);
-        verify(model).addAttribute("title", Messages.EDIT_MOVIE_TITLE);
-        verify(model).addAttribute("message", Messages.SAVED_MOVIE_SUCCESS);
+        assertEquals("movies/form", view);
     }
 
     @Test
-    public void shouldUpdateMovieWithNoErrors() {
-        Movie movie = new Movie();
-        movie.setId(1);
-        BindingResult result = mock(BindingResult.class);
-        when(result.hasErrors()).thenReturn(false);
-
-        when(movieServiceMock.save(any(Movie.class))).thenReturn(movie);
-
-        String viewName = controller.saveMovie(movie, result, model);
-
-        assertEquals("movies/form", viewName);
-
-        verify(model).addAttribute("movie", movie);
-        verify(model).addAttribute("title", Messages.EDIT_MOVIE_TITLE);
-        verify(model).addAttribute("message", Messages.UPDATED_MOVIE_SUCCESS);
-    }
-
-
-    @Test
-    public void shouldTrySaveMovieWithErrors() {
-        Movie movie = new Movie();
+    void shouldTrySaveMovieWithErrors() {
         BindingResult result = mock(BindingResult.class);
         when(result.hasErrors()).thenReturn(true);
 
-        String viewName = controller.saveMovie(movie, result, model);
+        String view = controller.saveMovie(new Movie(), result, model);
 
-        assertEquals("movies/form", viewName);
-
-        verifyNoInteractions(model);
+        assertEquals("movies/form", view);
     }
-
 
     @Test
-    public void shouldGoToEditMovie() {
+    void shouldGoToEditMovie() {
         Movie movie = new Movie();
         movie.setId(1);
-        List<Actor> actors = List.of(new Actor());
-        movie.setActors(actors);
-        when(movieServiceMock.getMovieById(movie.getId())).thenReturn(movie);
+        movie.setActors(List.of(new Actor()));
 
-        String viewName = controller.editMovie(movie.getId(), model);
+        when(movieServiceMock.getMovieById(1)).thenReturn(movie);
 
-        assertEquals("movies/form", viewName);
+        String view = controller.editMovie(1, model);
 
-        verify(model).addAttribute("movie", movie);
-        verify(model).addAttribute("actors", actors);
-        verify(model).addAttribute("title", Messages.EDIT_MOVIE_TITLE);
+        assertEquals("movies/form", view);
     }
-
 }

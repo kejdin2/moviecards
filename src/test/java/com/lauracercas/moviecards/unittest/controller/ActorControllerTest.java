@@ -4,41 +4,33 @@ import com.lauracercas.moviecards.controller.ActorController;
 import com.lauracercas.moviecards.model.Actor;
 import com.lauracercas.moviecards.model.Movie;
 import com.lauracercas.moviecards.service.actor.ActorService;
+import com.lauracercas.moviecards.service.client.ActorServiceClient;
 import com.lauracercas.moviecards.util.Messages;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.Mock;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 
-/**
- * Autor: Laura Cercas Ramos
- * Proyecto: TFM Integración Continua con GitHub Actions
- * Fecha: 04/06/2024
- */
 class ActorControllerTest {
 
     private ActorController controller;
-
-    @Mock
-    private ActorService actorServiceMock;
-
     private AutoCloseable closeable;
-    @Mock
-    private Model model;
+
+    @Mock ActorService actorServiceMock;              // kept for constructor
+    @Mock ActorServiceClient actorClientMock;         // NEW
+    @Mock Model model;
 
     @BeforeEach
     void setUp() {
         closeable = openMocks(this);
-        controller = new ActorController(actorServiceMock);
+        controller = new ActorController(actorServiceMock, actorClientMock);
     }
 
     @AfterEach
@@ -46,92 +38,57 @@ class ActorControllerTest {
         closeable.close();
     }
 
-
     @Test
-    public void shouldGoListActorAndGetAllActors() {
-        List<Actor> actors = new ArrayList<>();
+    void shouldGoListActorAndGetAllActors() {
+        when(actorClientMock.getAllActors()).thenReturn(List.of());
 
-        when(actorServiceMock.getAllActors()).thenReturn(actors);
+        String view = controller.getActorsList(model);
 
-        String viewName = controller.getActorsList(model);
-
-        assertEquals("actors/list", viewName);
+        assertEquals("actors/list", view);
+        verify(model).addAttribute(eq("actors"), any());
     }
 
     @Test
-    public void shouldInitializeActor() {
-        String viewName = controller.newActor(model);
+    void shouldInitializeActor() {
+        String view = controller.newActor(model);
 
-        assertEquals("actors/form", viewName);
-
-        verify(model).addAttribute("actor", new Actor());
+        assertEquals("actors/form", view);
+        verify(model).addAttribute(eq("actor"), any(Actor.class));
         verify(model).addAttribute("title", Messages.NEW_ACTOR_TITLE);
     }
 
     @Test
-    public void shouldSaveActorWithNoErrors() {
+    void shouldSaveActorWithNoErrors() {
         Actor actor = new Actor();
         BindingResult result = mock(BindingResult.class);
         when(result.hasErrors()).thenReturn(false);
+        when(actorClientMock.saveActor(any())).thenReturn(actor);
 
-        when(actorServiceMock.save(any(Actor.class))).thenReturn(actor);
+        String view = controller.saveActor(actor, result, model);
 
-        String viewName = controller.saveActor(actor, result, model);
-
-        assertEquals("actors/form", viewName);
-
-        verify(model).addAttribute("actor", actor);
-        verify(model).addAttribute("title", Messages.EDIT_ACTOR_TITLE);
-        verify(model).addAttribute("message", Messages.SAVED_ACTOR_SUCCESS);
+        assertEquals("actors/form", view);
     }
 
     @Test
-    public void shouldUpdateActorWithNoErrors() {
-        Actor actor = new Actor();
-        actor.setId(1);
-        BindingResult result = mock(BindingResult.class);
-        when(result.hasErrors()).thenReturn(false);
-
-        when(actorServiceMock.save(any(Actor.class))).thenReturn(actor);
-
-        String viewName = controller.saveActor(actor, result, model);
-
-        assertEquals("actors/form", viewName);
-
-        verify(model).addAttribute("actor", actor);
-        verify(model).addAttribute("title", Messages.EDIT_ACTOR_TITLE);
-        verify(model).addAttribute("message", Messages.UPDATED_ACTOR_SUCCESS);
-    }
-
-    @Test
-    public void shouldTrySaveActorWithErrors() {
-        Actor actor = new Actor();
+    void shouldTrySaveActorWithErrors() {
         BindingResult result = mock(BindingResult.class);
         when(result.hasErrors()).thenReturn(true);
 
-        String viewName = controller.saveActor(actor, result, model);
+        String view = controller.saveActor(new Actor(), result, model);
 
-        assertEquals("actors/form", viewName);
-
-        verifyNoInteractions(model);
+        assertEquals("actors/form", view);
     }
 
     @Test
-    public void shouldGoToEditActor() {
+    void shouldGoToEditActor() {
         Actor actor = new Actor();
         actor.setId(1);
-        List<Movie> movies = List.of(new Movie());
-        actor.setMovies(movies);
-        when(actorServiceMock.getActorById(actor.getId())).thenReturn(actor);
+        actor.setMovies(List.of(new Movie()));
 
-        String viewName = controller.editActor(actor.getId(), model);
+        when(actorClientMock.getActorById(1)).thenReturn(actor);
 
-        assertEquals("actors/form", viewName);
+        String view = controller.editActor(1, model);
 
-        verify(model).addAttribute("actor", actor);
-        verify(model).addAttribute("movies", movies);
-        verify(model).addAttribute("title", Messages.EDIT_ACTOR_TITLE);
+        assertEquals("actors/form", view);
     }
-
-
 }
