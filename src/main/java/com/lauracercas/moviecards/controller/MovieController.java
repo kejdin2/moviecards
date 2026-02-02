@@ -3,6 +3,7 @@ package com.lauracercas.moviecards.controller;
 import com.lauracercas.moviecards.model.Actor;
 import com.lauracercas.moviecards.model.Movie;
 import com.lauracercas.moviecards.service.movie.MovieService;
+import com.lauracercas.moviecards.service.client.MovieServiceClient;
 import com.lauracercas.moviecards.util.Messages;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,25 +16,26 @@ import org.springframework.web.bind.annotation.PostMapping;
 import java.util.List;
 
 
-/**
- * Autor: Laura Cercas Ramos
- * Proyecto: TFM Integración Continua con GitHub Actions
- * Fecha: 04/06/2024
- */
 @Controller
 public class MovieController {
 
     private final MovieService movieService;
+    private final MovieServiceClient movieServiceClient;
 
-    public MovieController(MovieService movieService) {
-        this.movieService = movieService;
-    }
+
+    public MovieController(MovieService movieService,
+                       MovieServiceClient movieServiceClient) {
+    this.movieService = movieService;
+    this.movieServiceClient = movieServiceClient;
+}
+
 
     @GetMapping("movies")
     public String getMoviesList(Model model) {
-        model.addAttribute("movies", movieService.getAllMovies());
-        return "movies/list";
-    }
+    model.addAttribute("movies", movieServiceClient.getAllMovies());
+    return "movies/list";
+}
+
 
     @GetMapping("movies/new")
     public String newMovie(Model model) {
@@ -47,7 +49,7 @@ public class MovieController {
         if (result.hasErrors()) {
             return "movies/form";
         }
-        Movie movieSaved = movieService.save(movie);
+        Movie movieSaved = movieServiceClient.saveMovie(movie); 
         if (movieSaved.getId() != null) {
             model.addAttribute("message", Messages.UPDATED_MOVIE_SUCCESS);
         } else {
