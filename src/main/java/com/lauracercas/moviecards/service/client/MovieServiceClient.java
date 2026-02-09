@@ -12,7 +12,9 @@ public class MovieServiceClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private static final String BASE_URL = "http://127.0.0.1:8080/api/movies";
+    private static final String BASE_URL =
+    "https://moviecards-service-neziri.azurewebsites.net/api/movies";
+
 
     public List<Movie> getAllMovies() {
         Movie[] movies = restTemplate.getForObject(BASE_URL, Movie[].class);
