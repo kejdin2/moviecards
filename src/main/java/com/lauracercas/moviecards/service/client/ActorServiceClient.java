@@ -13,7 +13,7 @@ public class ActorServiceClient {
     private final RestTemplate restTemplate = new RestTemplate();
 
     private static final String BASE_URL =
-            "https://moviecards-service-neziri.azurewebsites.net/api/actors";
+        "https://moviecards-neziri-g5f9g9e2g5awg5at.westeurope-01.azurewebsites.net/api/actors";
 
     public List<Actor> getAllActors() {
         Actor[] actors = restTemplate.getForObject(BASE_URL, Actor[].class);

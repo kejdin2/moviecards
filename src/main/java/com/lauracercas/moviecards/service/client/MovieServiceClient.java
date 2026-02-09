@@ -13,7 +13,7 @@ public class MovieServiceClient {
     private final RestTemplate restTemplate = new RestTemplate();
 
     private static final String BASE_URL =
-    "https://moviecards-service-neziri.azurewebsites.net/api/movies";
+    "https://moviecards-neziri-g5f9g9e2g5awg5at.westeurope-01.azurewebsites.net/api/movies";
 
 
     public List<Movie> getAllMovies() {
