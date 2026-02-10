@@ -1,5 +1,5 @@
 package com.lauracercas.moviecards.service.client;
-
+// Updated to support deadDate field from service
 import com.lauracercas.moviecards.model.Actor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
