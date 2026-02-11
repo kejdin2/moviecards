@@ -11,9 +11,10 @@ on:
 
 jobs:
 
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
 
     steps:
@@ -24,61 +25,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - run: mvn -B -DskipTests clean package
+      - name: Build with Maven
+        run: mvn -B -DskipTests clean package
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: java-app
-          path: target/*.jar
-
-
-  stage:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: java-app
-
-      - uses: azure/login@v2
+      - name: Azure Login
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D0264C2D66084359A5A9DB550E53B2B4 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_31C1404A8C8445FF80E36B476744BE2A }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4A9023BCCE10477BA87307BEE5217EE6 }}
 
-      - uses: azure/webapps-deploy@v3
-        with:
-          app-name: moviecards-pre-neziri
-          package: '*.jar'
-
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: stage
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: java-app
-
-      - uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D0264C2D66084359A5A9DB550E53B2B4 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_31C1404A8C8445FF80E36B476744BE2A }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4A9023BCCE10477BA87307BEE5217EE6 }}
-
-      - uses: azure/webapps-deploy@v3
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v3
         with:
           app-name: moviecards-neziri
-          package: '*.jar'
+          package: target/*.jar
+
