@@ -19,17 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java version
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build with Maven
-        run: mvn -B -DskipTests clean package
+      - run: mvn -B -DskipTests clean package
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: java-app
           path: target/*.jar
@@ -43,20 +40,19 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
         with:
           name: java-app
 
-      - name: Azure Login
-        uses: azure/login@v2
+      - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D0264C2D66084359A5A9DB550E53B2B4 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_31C1404A8C8445FF80E36B476744BE2A }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4A9023BCCE10477BA87307BEE5217EE6 }}
 
-      - name: Deploy to STAGE app
-        uses: azure/webapps-deploy@v3
+      - uses: azure/webapps-deploy@v3
         with:
           app-name: moviecards-pre-neziri
           package: '*.jar'
@@ -70,20 +66,19 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
         with:
           name: java-app
 
-      - name: Azure Login
-        uses: azure/login@v2
+      - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D0264C2D66084359A5A9DB550E53B2B4 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_31C1404A8C8445FF80E36B476744BE2A }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4A9023BCCE10477BA87307BEE5217EE6 }}
 
-      - name: Deploy to PRODUCTION app
-        uses: azure/webapps-deploy@v3
+      - uses: azure/webapps-deploy@v3
         with:
           app-name: moviecards-neziri
           package: '*.jar'
