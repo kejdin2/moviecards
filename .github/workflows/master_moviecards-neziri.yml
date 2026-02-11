@@ -10,10 +10,11 @@ on:
   workflow_dispatch:
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -24,42 +25,65 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-
       - name: Build with Maven
         run: mvn -B -DskipTests clean package
 
-      - name: Upload artifact for deployment job
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          path: '${{ github.workspace }}/target/*.jar'
+          path: target/*.jar
 
-  deploy:
+
+  stage:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
-  
+      id-token: write
+      contents: read
+
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: java-app
-      
-      - name: Login to Azure
+
+      - name: Azure Login
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D0264C2D66084359A5A9DB550E53B2B4 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_31C1404A8C8445FF80E36B476744BE2A }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4A9023BCCE10477BA87307BEE5217EE6 }}
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
+      - name: Deploy to STAGE app
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'moviecards-neziri'
-          slot-name: 'Production'
+          app-name: moviecards-pre-neziri
           package: '*.jar'
 
-          
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: stage
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: java-app
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D0264C2D66084359A5A9DB550E53B2B4 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_31C1404A8C8445FF80E36B476744BE2A }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4A9023BCCE10477BA87307BEE5217EE6 }}
+
+      - name: Deploy to PRODUCTION app
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: moviecards-neziri
+          package: '*.jar'
